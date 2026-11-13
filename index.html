@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Feather Scope Pro - blueprint check for Tay</title>
+<meta name="description" content="A working check of the Feather Scope Pro blueprint: reminders, gift cards, texts, hours and quotes, run against the blueprint's own test plan.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the page</a>
+<header class="bar">
+  <p class="bar-title"><span class="feather" aria-hidden="true"></span>Feather Scope Pro <span class="bar-sub">blueprint check for Tay, Feather Lady Cleaning</span></p>
+  <p class="bar-by">Prepared by James</p>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-text">
+      <h1 id="hero-title">Your 6 PM reminder arrives after free cancellation has closed.</h1>
+      <p class="lede">I read all 45 pages of your blueprint and ran the parts that are easy to get wrong. This is the first one. Move the clean time and watch where the reminder lands.</p>
+    </div>
+
+    <div class="strip-wrap">
+      <div class="strip-controls">
+        <label class="slider">
+          <span>Clean starts at <strong id="clean-time-label">9:00 AM</strong> on Tuesday</span>
+          <input id="clean-time" type="range" min="420" max="1140" step="30" value="540" aria-describedby="strip-readout">
+        </label>
+        <label class="switch">
+          <input id="two-evenings" type="checkbox">
+          <span>Send the policy reminder two evenings before</span>
+        </label>
+      </div>
+      <div class="strip" id="strip" aria-hidden="true">
+        <div class="band band-free" id="band-free"><span>Free to cancel</span></div>
+        <div class="band band-fee" id="band-fee"><span>25% fee</span></div>
+        <div class="clean" id="clean-block"><span>Clean</span></div>
+        <div class="pin" id="pin"><span class="pin-label">Reminder text</span></div>
+        <div class="cut" id="cut"><span class="cut-label">24 hours before</span></div>
+        <div class="ticks" id="ticks"></div>
+      </div>
+      <ul class="legend" aria-hidden="true">
+        <li><i class="k-free"></i>Free to cancel</li>
+        <li><i class="k-fee"></i>25% fee</li>
+        <li><i class="k-cut"></i>24 hours before</li>
+        <li><i class="k-pin"></i>Reminder text</li>
+        <li><i class="k-clean"></i>Clean</li>
+      </ul>
+      <p class="readout" id="strip-readout" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section class="ran" aria-labelledby="ran-title">
+    <h2 id="ran-title" class="visually-hidden">What I ran</h2>
+    <ul class="ran-list" id="ran-list"></ul>
+    <p class="ran-note">Function tests ran on hidane, a third-party Firestore emulator. Your security rules are written but not run yet: Google's emulator could not be downloaded where I built this. Details at the bottom.</p>
+  </section>
+
+  <section class="plan" aria-labelledby="plan-title">
+    <div class="section-head">
+      <h2 id="plan-title">Your test plan, run here</h2>
+      <p>These use the same rules the Cloud Functions use, with your numbers from the blueprint. Nothing is saved; reload to start over.</p>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Test plan tools">
+      <button role="tab" id="tab-gift" aria-controls="panel-gift" aria-selected="true">Gift cards</button>
+      <button role="tab" id="tab-text" aria-controls="panel-text" aria-selected="false" tabindex="-1">Texts and the Jean test</button>
+      <button role="tab" id="tab-money" aria-controls="panel-money" aria-selected="false" tabindex="-1">Hours and quotes</button>
+    </div>
+
+    <!-- Gift cards -->
+    <div class="panel" role="tabpanel" id="panel-gift" aria-labelledby="tab-gift">
+      <div class="cols">
+        <div class="col">
+          <h3>Sell a card</h3>
+          <fieldset class="switches">
+            <legend>Which gifts you offer</legend>
+            <div id="gift-switches"></div>
+          </fieldset>
+          <form id="sell-form" class="form" novalidate>
+            <label>Gift <select id="sell-option"></select></label>
+            <label id="custom-wrap" hidden>Custom amount ($) <input id="sell-custom" inputmode="decimal" autocomplete="off"></label>
+            <div class="two">
+              <label>From <input id="sell-from" value="Mai L." autocomplete="off"></label>
+              <label>To <input id="sell-to" value="Nia R." autocomplete="off"></label>
+            </div>
+            <label>Gift message <input id="sell-msg" value="Enjoy a morning off" autocomplete="off"></label>
+            <div class="giftcard" id="gift-preview" aria-live="polite"></div>
+            <p class="form-error" id="sell-error" role="alert"></p>
+            <button type="submit" class="btn">Create gift card</button>
+            <p class="hint">In the app the buyer pays first through Stripe and the card turns active when Stripe confirms. Here it is created active straight away.</p>
+          </form>
+        </div>
+        <div class="col">
+          <h3>Sold cards</h3>
+          <dl class="summary" id="gift-summary"></dl>
+          <ul class="sold" id="sold-list" tabindex="0" aria-label="Sold gift cards"></ul>
+          <form id="redeem-form" class="form redeem" novalidate>
+            <label>Redeem a code <input id="redeem-code" placeholder="FL-7K2Q9P" autocomplete="off" spellcheck="false"></label>
+            <button type="submit" class="btn">Redeem</button>
+          </form>
+          <p class="result" id="redeem-result" aria-live="polite"></p>
+          <div class="runbox">
+            <button type="button" class="btn btn-quiet" id="run-gift-plan">Run the redeem tests from page 41</button>
+            <ol class="checks" id="gift-checks"></ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Texts -->
+    <div class="panel" role="tabpanel" id="panel-text" aria-labelledby="tab-text" hidden>
+      <div class="cols">
+        <div class="col">
+          <h3>What one reminder costs to send</h3>
+          <label class="block">Reminder text <span class="hint-inline">(the opening is my draft; the last sentence is yours, word for word)</span>
+            <textarea id="sms-text" rows="6" spellcheck="false"></textarea>
+          </label>
+          <div class="sms-actions">
+            <button type="button" class="btn btn-quiet" id="sms-iphone">Type it the way an iPhone would</button>
+            <button type="button" class="btn btn-quiet" id="sms-clean">Clean it before sending</button>
+          </div>
+          <dl class="meter" id="sms-meter"></dl>
+          <p class="sms-flags" id="sms-flags" aria-live="polite"></p>
+        </div>
+        <div class="col">
+          <h3>The Jean test, on a winter night</h3>
+          <p class="small">Three clients are booked for tomorrow or the day after. Pick the evening the 6 PM job runs, then run it the right way and the easy way.</p>
+          <label class="block">Evening the job runs
+            <select id="jean-date">
+              <option value="2026-11-16">Mon Nov 16, 2026 (standard time)</option>
+              <option value="2026-07-13">Mon Jul 13, 2026 (daylight time)</option>
+            </select>
+          </label>
+          <table class="jean">
+            <caption class="visually-hidden">Clients and their cleans</caption>
+            <thead><tr><th scope="col">Client</th><th scope="col">Clean</th><th scope="col">Reminders</th></tr></thead>
+            <tbody id="jean-rows"></tbody>
+          </table>
+          <div class="sms-actions">
+            <button type="button" class="btn" id="jean-local">Run with the business's time zone</button>
+            <button type="button" class="btn btn-quiet" id="jean-utc">Run with the server's UTC clock</button>
+          </div>
+          <p class="result" id="jean-result" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hours and quotes -->
+    <div class="panel" role="tabpanel" id="panel-money" aria-labelledby="tab-money" hidden>
+      <div class="cols">
+        <div class="col">
+          <h3>Paid hours</h3>
+          <form class="form" id="hours-form">
+            <div class="two">
+              <label>Arrived <input type="time" id="h-in" value="09:00"></label>
+              <label>Left <input type="time" id="h-out" value="13:30"></label>
+            </div>
+            <div class="two">
+              <label>Paid commute (min) <input type="number" id="h-commute" value="0" min="0" step="5"></label>
+              <label>Rate ($/hr) <input type="number" id="h-rate" value="20" min="0" step="0.5"></label>
+            </div>
+          </form>
+          <p class="big-result" id="hours-result" aria-live="polite"></p>
+          <p class="sms-flags" id="hours-flags"></p>
+          <p class="small">Your test: Arrived 9:00, Left 1:30 is 4.0 paid hours. Try 12:10 to 3:00, or 8:00 to 12:15.</p>
+        </div>
+        <div class="col">
+          <h3>Quote</h3>
+          <form class="form" id="quote-form">
+            <div class="two">
+              <label>Service type <select id="q-type"></select></label>
+              <label>Area <select id="q-area"></select></label>
+            </div>
+            <div class="two">
+              <label id="q-hours-wrap">Hours (Regular) <input type="number" id="q-hours" value="2" min="0" step="0.5"></label>
+              <label id="q-turn-wrap">Turnovers (Airbnb) <input type="number" id="q-turn" value="1" min="1" step="1"></label>
+            </div>
+            <fieldset class="addons">
+              <legend>Add-ons</legend>
+              <div id="q-addons"></div>
+            </fieldset>
+            <details class="prices">
+              <summary>Add-on prices by area - not in the blueprint, placeholders until you send yours</summary>
+              <div id="q-price-grid" class="price-grid"></div>
+            </details>
+          </form>
+          <div class="quote" id="quote-out" aria-live="polite"></div>
+          <label class="block policy-edit">Your cancellation policy <span class="hint-inline">(edit it: the line under the quote follows as you type)</span>
+            <textarea id="q-policy" rows="3"></textarea>
+          </label>
+          <p class="sms-flags" id="policy-drift" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="findings" aria-labelledby="find-title">
+    <div class="section-head">
+      <h2 id="find-title">What to settle before I build</h2>
+      <p><span id="find-count"></span> points from the blueprint, each with its page and the fix I would make. Most are small; the first group is not.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Show">
+      <button type="button" class="chip" data-group="all" aria-pressed="true">All</button>
+      <button type="button" class="chip" data-group="money" aria-pressed="false">Could cost money or trust</button>
+      <button type="button" class="chip" data-group="plan" aria-pressed="false">Would fail your test plan</button>
+      <button type="button" class="chip" data-group="decide" aria-pressed="false">Needs your call</button>
+    </div>
+    <ol class="find-list" id="find-list"></ol>
+  </section>
+
+  <section class="build" aria-labelledby="build-title">
+    <div class="section-head">
+      <h2 id="build-title">How the build would run</h2>
+    </div>
+    <div class="build-grid">
+      <div>
+        <h3>Your order, with three things moved earlier</h3>
+        <p>I would follow your 18-step build order. Three things move to the front because everything else stands on them: the security rules are tested with two businesses in step 2, not at the end; the time-zone field goes in with the database; and Stripe Connect, if you choose it, is set up before the first invoice screen.</p>
+      </div>
+      <div>
+        <h3>Done means your test plan passes</h3>
+        <p>Acceptance is the test plan on pages 40 to 42, on a real iPhone and a real Android phone, with Feather Lady as business one and a second test business that sees nothing of yours. The Cloud Functions also carry their own tests, so a change next year can be checked in minutes.</p>
+      </div>
+      <div>
+        <h3>Handover</h3>
+        <p>The project moves to your FlutterFlow account (FlutterFlow requires the receiving account to be on a paid plan), connected to your Firebase project, with an exported code copy, the functions source and tests, and a note listing every key and account.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof" aria-labelledby="proof-title">
+    <h2 id="proof-title">Measured, and not measured</h2>
+    <div class="proof-grid">
+      <div>
+        <h3>Measured</h3>
+        <ul id="measured"></ul>
+      </div>
+      <div>
+        <h3>Not measured</h3>
+        <ul>
+          <li>Your security rules: written with a test file for two businesses, not run. Google's Firestore emulator could not be downloaded in my build environment, and the emulator I used does not support rules yet.</li>
+          <li>No FlutterFlow screens were built for this page; it checks the logic the screens call.</li>
+          <li>No real texts, Stripe charges or Apple review. Twilio and Stripe were replaced by test doubles; Stripe webhook signatures were checked with Stripe's own library.</li>
+          <li>The add-on and upsell prices on this page are placeholders, not yours.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Built for Tay at Feather Lady Cleaning LLC as part of a proposal. Blueprint page numbers refer to the 45-page Feather Scope Pro FlutterFlow blueprint.</p>
+</footer>
+
+<script type="module" src="app.mjs"></script>
+</body>
+</html>

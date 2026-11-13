@@ -1,0 +1,296 @@
+{
+  "date": "2026-11-13",
+  "node": "v22.23.4",
+  "emulator": "hidane 0.7.0 (third-party Firestore emulator; Security Rules not supported)",
+  "engineTests": {
+    "tests": 31,
+    "pass": 31,
+    "fail": 0
+  },
+  "functionTests": {
+    "tests": 20,
+    "pass": 20,
+    "fail": 0
+  },
+  "mutation": {
+    "caught": 31,
+    "total": 31,
+    "results": [
+      {
+        "name": "E1 cancellation: exactly 24 h charged",
+        "caught": true
+      },
+      {
+        "name": "E2 lunch never deducted",
+        "caught": true
+      },
+      {
+        "name": "E3 gift code: spaces not stripped",
+        "caught": true
+      },
+      {
+        "name": "E4 $100 minimum ignored",
+        "caught": true
+      },
+      {
+        "name": "E5 add-on price from the first area",
+        "caught": true
+      },
+      {
+        "name": "E6 GSM escapes counted once",
+        "caught": true
+      },
+      {
+        "name": "E7 modulo bias in codes",
+        "caught": true
+      },
+      {
+        "name": "E8 duplicate referral codes",
+        "caught": true
+      },
+      {
+        "name": "E9 allergy match case-sensitive",
+        "caught": true
+      },
+      {
+        "name": "E10 reminder uses UTC tomorrow",
+        "caught": true
+      },
+      {
+        "name": "E11 monthly 31st not clamped",
+        "caught": true
+      },
+      {
+        "name": "E12 badge accepts http",
+        "caught": true
+      },
+      {
+        "name": "E13 client card check leaks names",
+        "caught": true
+      },
+      {
+        "name": "E14 referral credit applies twice",
+        "caught": true
+      },
+      {
+        "name": "E15 redeemed card redeems again",
+        "caught": true
+      },
+      {
+        "name": "E16 $200 switch ignored",
+        "caught": true
+      },
+      {
+        "name": "E17 profit ignores wages",
+        "caught": true
+      },
+      {
+        "name": "E18 sold price follows later price change",
+        "caught": true
+      },
+      {
+        "name": "F1 upsell sync without a transaction (check, then add)",
+        "caught": true
+      },
+      {
+        "name": "F2 redeem without a transaction",
+        "caught": true
+      },
+      {
+        "name": "F3 send claim without a transaction",
+        "caught": true
+      },
+      {
+        "name": "F4 webhook without event record",
+        "caught": true
+      },
+      {
+        "name": "F5 scope page returns the whole client",
+        "caught": true
+      },
+      {
+        "name": "F6 reminder window from the UTC clock",
+        "caught": true
+      },
+      {
+        "name": "F7 one time zone for every business",
+        "caught": true
+      },
+      {
+        "name": "F8 gift card active before payment",
+        "caught": true
+      },
+      {
+        "name": "F9 client card check returns the document",
+        "caught": true
+      },
+      {
+        "name": "F10 failed text keeps its claim",
+        "caught": true
+      },
+      {
+        "name": "F11 gift card payment counted twice",
+        "caught": true
+      },
+      {
+        "name": "F13 webhook marks any payment as paid",
+        "caught": true
+      },
+      {
+        "name": "F12 nudge fires before +1 minute",
+        "caught": true
+      }
+    ]
+  },
+  "rulesTests": "written, not run (Google Firestore emulator download blocked)",
+  "measure": {
+    "generatedAt": "2026-11-13T22:31:55.380Z",
+    "node": "v22.23.4",
+    "reminderWindow": [
+      {
+        "cleanAt": "08:00",
+        "noticeHoursAtReminder": 14,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 10
+      },
+      {
+        "cleanAt": "09:00",
+        "noticeHoursAtReminder": 15,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 9
+      },
+      {
+        "cleanAt": "10:00",
+        "noticeHoursAtReminder": 16,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 8
+      },
+      {
+        "cleanAt": "12:00",
+        "noticeHoursAtReminder": 18,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 6
+      },
+      {
+        "cleanAt": "14:00",
+        "noticeHoursAtReminder": 20,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 4
+      },
+      {
+        "cleanAt": "17:30",
+        "noticeHoursAtReminder": 23.5,
+        "insideWindow": true,
+        "freeCancellationClosedHoursBefore": 0.5
+      },
+      {
+        "cleanAt": "18:00",
+        "noticeHoursAtReminder": 24,
+        "insideWindow": false,
+        "freeCancellationClosedHoursBefore": 0
+      },
+      {
+        "cleanAt": "19:00",
+        "noticeHoursAtReminder": 25,
+        "insideWindow": false,
+        "freeCancellationClosedHoursBefore": 0
+      }
+    ],
+    "yearScan": [
+      {
+        "year": 2026,
+        "tz": "America/Chicago",
+        "cleanTime": "09:00",
+        "reminderTime": "18:00",
+        "days": 365,
+        "naiveCorrect": 238,
+        "naiveMissed": 127,
+        "insideWindow": 365,
+        "missedMonths": [
+          1,
+          2,
+          3,
+          11,
+          12
+        ]
+      },
+      {
+        "year": 2027,
+        "tz": "America/Chicago",
+        "cleanTime": "09:00",
+        "reminderTime": "18:00",
+        "days": 365,
+        "naiveCorrect": 238,
+        "naiveMissed": 127,
+        "insideWindow": 365,
+        "missedMonths": [
+          1,
+          2,
+          3,
+          11,
+          12
+        ]
+      }
+    ],
+    "sms": {
+      "plain": {
+        "encoding": "GSM-7",
+        "units": 245,
+        "segments": 2,
+        "perSegment": 153,
+        "chars": 245,
+        "nonGsm": []
+      },
+      "curlyApostrophe": {
+        "encoding": "UCS-2",
+        "units": 245,
+        "segments": 4,
+        "perSegment": 67,
+        "chars": 245,
+        "nonGsm": [
+          "U+2019"
+        ]
+      },
+      "emDash": {
+        "encoding": "UCS-2",
+        "units": 245,
+        "segments": 4,
+        "perSegment": 67,
+        "chars": 245,
+        "nonGsm": [
+          "U+2014"
+        ]
+      },
+      "both": {
+        "encoding": "UCS-2",
+        "units": 245,
+        "segments": 4,
+        "perSegment": 67,
+        "chars": 245,
+        "nonGsm": [
+          "U+2014",
+          "U+2019"
+        ]
+      },
+      "afterToGsmSafe": {
+        "encoding": "GSM-7",
+        "units": 245,
+        "segments": 2,
+        "perSegment": 153
+      },
+      "reminderText": "Hi Stephanie, this is Feather Lady Cleaning LLC. Reminder: your cleaning is tomorrow, Tue Nov 17, 9:00 AM. Need to cancel? Please let us know as soon as you can - cancellations with less than 24 hours' notice are charged 25% of the cleaning fee."
+    },
+    "giftCodes": {
+      "alphabet": "23456789ABCDEFGHJKMNPQRSTUVWXYZ",
+      "alphabetSize": 31,
+      "codeSpace": 887503681,
+      "drawn": 1000000,
+      "repeatsSeen": 583,
+      "repeatsExpected": 563.4,
+      "pAnyCollisionAt1000Cards": 0.0005626562166658243,
+      "pAnyCollisionAt10000Cards": 0.05477488291699298,
+      "chiSquare30df": 26.3,
+      "msPerCode": 0.00314255465
+    }
+  }
+}

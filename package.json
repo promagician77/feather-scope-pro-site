@@ -1,0 +1,11 @@
+{
+  "name": "feather-scope-pro-blueprint-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static demo: Feather Scope Pro blueprint check (reminders, gift cards, texts, hours, quotes). No build step.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve@14 -l 3000 ."
+  },
+  "license": "UNLICENSED"
+}
