@@ -8,6 +8,8 @@ import {
 } from './engine/giftcards.mjs';
 import { FEATHER_PRICING, SERVICE_TYPES, quoteTotal, usd } from './engine/quote.mjs';
 import { paidTime } from './engine/hours.mjs';
+import { productBlockedForClient } from './engine/smallrules.mjs';
+import { upsellOffers } from './engine/quote.mjs';
 import { FINDINGS, GROUPS } from './data/findings.mjs';
 
 const TZ = 'America/Chicago';
@@ -94,7 +96,7 @@ async function loadResults() {
 
 // ------------------------------------------------------------ tabs
 function setupTabs() {
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const tabs = [...document.querySelectorAll('.tabs [role="tab"]')];
   const select = (tab, focus) => {
     for (const t of tabs) {
       const on = t === tab;
@@ -174,14 +176,20 @@ function updatePreview() {
     <div class="gc-brand">Feather Lady Cleaning</div>`;
 }
 
+function statusText(c) {
+  if (c.status === 'redeemed') return `Redeemed ${c.redeemedAt.slice(5, 10).replace('-', '/')}`;
+  return c.status === 'pending' ? 'Pending payment' : 'Active';
+}
+
 function renderGiftList() {
+  if (typeof renderGp === 'function') renderGp();
   const s = giftSummary(gift.cards);
   $('gift-summary').innerHTML = [
     ['Cards sold', s.cardsSold], ['Value sold', money(s.valueSoldCents)],
     ['Still to redeem', money(s.stillToRedeemCents)], ['Redeemed', money(s.redeemedCents)],
   ].map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
   $('sold-list').innerHTML = [...gift.cards].reverse().map((c) => `
-    <li><span class="code">${esc(c.code)}</span><span class="status status-${c.status}">${c.status === 'redeemed' ? `Redeemed ${esc(c.redeemedAt.slice(5, 10).replace('-', '/'))}` : 'Active'}</span>
+    <li><span class="code">${esc(c.code)}</span><span class="status status-${c.status}">${statusText(c)}</span>
     <span class="who">${esc(cardTitle(c))} - from ${esc(c.buyerName)} to ${esc(c.recipientName)}</span></li>`).join('');
 }
 
@@ -209,6 +217,7 @@ function setupGift() {
     else if (id === 'standard') s.giftStandardCleanEnabled = e.target.checked;
     else if (id === 'deep') s.giftDeepCleanEnabled = e.target.checked;
     renderSellOptions();
+    renderGpOptions();
   });
   for (const id of ['sell-option', 'sell-custom', 'sell-from', 'sell-to', 'sell-msg']) $(id).addEventListener('input', updatePreview);
   $('sell-form').addEventListener('submit', (e) => {
@@ -458,6 +467,7 @@ function renderQuote() {
   const el = $('policy-drift');
   el.className = drift.length ? 'sms-flags' : 'sms-flags ok';
   el.textContent = drift.length ? `${drift.join(' ')} The reminder text would still say 24 hours and 25%.` : 'The quote, the reminder line and the fee all say 24 hours and 25%.';
+  if (typeof cvReady !== 'undefined' && cvReady) renderCv();
 }
 
 // ------------------------------------------------------------ findings
@@ -485,6 +495,280 @@ function setupFindings() {
   });
 }
 
+
+// ------------------------------------------------------------ phone: Cleaner View (Screen 3)
+const CV_RATE_CENTS = 2000; // the $20/hr in the job post (Screen 6)
+const CV_CLIENT = { name: 'Amy M.', first: 'Amy', allergies: ['Bleach'] };
+const CV_PRODUCTS = [
+  { name: 'Bleach spray', contains: 'Bleach' }, { name: 'Glass cleaner', contains: 'Ammonia' },
+  { name: 'Lemon all-purpose', contains: 'Fragrance' }, { name: 'Unscented degreaser', contains: 'None' },
+];
+const CV_CHECKLIST = [
+  ['Kitchen', 'Wipe counters'], ['Kitchen', 'Clean stovetop'], ['Kitchen', 'Mop floor'],
+  ['Bathroom', 'Scrub tub and shower'], ['Bathroom', 'Clean toilet'], ['Bathroom', 'Wipe mirrors'],
+];
+const UPSELL_SAMPLE = { Dishes: 2000, 'Making beds': 1500, Laundry: 2500, 'Pet waste cleanup': 3000, 'Bodily fluids': 5000 };
+let cvReady = false;
+const cv = { taps: { arrived: null, complete: null, left: null }, busy: false, ticks: new Set(), upsells: [], money: [], sheet: null };
+const JOB_START = 540, JOB_PRICE = 16500;
+const cvClock = () => +$('cv-clock').value;
+const clockLabel = (min) => formatClock(zonedToUtc({ ...DAY, h: Math.floor(min / 60), mi: min % 60 }, TZ), TZ);
+const atMin = (min) => zonedToUtc({ ...DAY, h: Math.floor(min / 60), mi: min % 60 }, TZ);
+
+function cvPricing() {
+  const p = structuredClone(quoteState.pricing);
+  Object.assign(p.upsellPrices, UPSELL_SAMPLE);
+  return p;
+}
+
+function renderCv() {
+  const now = cvClock();
+  $('cv-clock-label').textContent = clockLabel(now);
+  $('cv-status-time').textContent = clockLabel(now).replace(/ [AP]M$/, '');
+  const t = cv.taps;
+  const nudge = $('cv-nudge');
+  nudge.hidden = !(now >= JOB_START + 1 && t.arrived === null);
+  nudge.textContent = '9:01 AM - no Arrived tap yet. You got a reminder and Tay sees this clean flagged.';
+
+  for (const b of document.querySelectorAll('.tap')) {
+    const k = b.dataset.tap;
+    const label = { arrived: 'Arrived', complete: 'Clean complete', left: 'Left' }[k];
+    b.classList.remove('saving', 'failed');
+    if (t[k] !== null) { b.classList.add('done'); b.textContent = `${label} ${clockLabel(t[k])}`; }
+    else { b.classList.remove('done'); b.textContent = label; }
+    const ready = k === 'arrived' ? true : k === 'complete' ? t.arrived !== null : t.complete !== null;
+    b.disabled = cv.busy || t[k] !== null || !ready;
+  }
+
+  // Hours so far and pay, from the shared hours function.
+  let hrs = 0, pay = 0;
+  if (t.arrived !== null) {
+    const end = t.left ?? Math.max(now, t.arrived);
+    const r = paidTime({ arrivedUtc: atMin(t.arrived), leftUtc: atMin(end), tz: TZ, rateCents: CV_RATE_CENTS });
+    hrs = r.paidMin / 60; pay = r.payCents;
+  }
+  $('cv-hours').textContent = hrs.toFixed(2).replace(/0$/, '');
+  $('cv-pay').textContent = usd(pay);
+
+  for (const b of document.querySelectorAll('[data-late]')) b.disabled = t.arrived !== null;
+
+  const done = cv.ticks.size;
+  $('cv-progress').textContent = `${done} of ${CV_CHECKLIST.length} done${done === CV_CHECKLIST.length && t.complete === null ? ' - tap Clean complete when ready' : ''}`;
+
+  // Scope upsell box: offered items keep their snapshot price and state; the rest come from Quote Builder prices.
+  const inProgress = t.arrived !== null && t.left === null;
+  const offeredLabels = cv.upsells.map((u) => u.itemLabel);
+  const open = upsellOffers(cvPricing(), 'Sun Prairie', offeredLabels);
+  $('cv-upsell').innerHTML = [
+    ...cv.upsells.map((u, i) => `<li><span>${esc(u.itemLabel)}</span><span class="price">${usd(u.cents)}</span><span class="state state-${u.status}">${u.status === 'offered' ? 'Offered' : u.status === 'approved' ? 'Approved' : 'Declined'}</span></li>`),
+    ...open.map((o) => `<li><span>${esc(o.itemLabel)}</span><span class="price">${Number.isInteger(o.cents) ? usd(o.cents) : 'no price'}</span><button type="button" class="chip-sm" data-offer="${esc(o.itemLabel)}" ${inProgress && Number.isInteger(o.cents) && !cv.sheet ? '' : 'disabled'}>Offer</button></li>`),
+  ].join('');
+  const approved = cv.upsells.filter((u) => u.status === 'approved').reduce((a, u) => a + u.cents, 0);
+  $('cv-total').textContent = usd(JOB_PRICE + approved).replace('.00', '');
+  $('cv-money').innerHTML = (t.arrived === null ? 'Offers open once you tap Arrived. ' : '') + `Money: ${cv.money.length} income row${cv.money.length === 1 ? '' : 's'} from upsells. Placeholder prices. <button type="button" class="linkish" id="cv-resync">Run the approval sync again</button>`;
+}
+
+function cvSave(after) {
+  // "Saving..." first; offline shows the blueprint's own "Not saved" message.
+  cv.busy = true;
+  const msg = $('cv-tap-msg');
+  msg.className = 'tap-msg ok';
+  msg.textContent = 'Saving...';
+  renderCv();
+  setTimeout(() => {
+    cv.busy = false;
+    if ($('cv-offline').checked) {
+      msg.className = 'tap-msg';
+      msg.textContent = 'Not saved - tap again when you have signal';
+      renderCv();
+      return;
+    }
+    msg.textContent = '';
+    after();
+    renderCv();
+  }, 450);
+}
+
+function syncUpsells() {
+  // Same rule as the Cloud Function: one income row per approval, guarded by moneyEntryId.
+  for (const [i, u] of cv.upsells.entries()) {
+    if (u.status !== 'approved' || u.moneyEntryId) continue;
+    const id = `upsell_${i}`;
+    if (!cv.money.some((m) => m.id === id)) cv.money.push({ id, cents: u.cents, label: u.itemLabel });
+    u.moneyEntryId = id;
+  }
+}
+
+function setupCleanerView() {
+  $('cv-checklist').innerHTML = CV_CHECKLIST.map(([room, label], i) => `<li><label><input type="checkbox" data-tick="${i}"> ${esc(label)}<span class="room">${room}</span></label></li>`).join('');
+  const blocked = CV_PRODUCTS.filter((p) => productBlockedForClient(p, CV_CLIENT));
+  $('cv-allergy').innerHTML = `<b>Allergy: ${esc(CV_CLIENT.allergies.join(', '))}</b><ul>${CV_PRODUCTS.map((p) => `<li>${esc(p.name)}${blocked.includes(p) ? ' - <span class="dnu">Do NOT use</span>' : ''}</li>`).join('')}</ul>`;
+  $('cv-clock').addEventListener('input', renderCv);
+  $('cv-offline').addEventListener('change', () => { $('cv-tap-msg').textContent = ''; renderCv(); });
+  $('cv-access').addEventListener('click', (e) => {
+    const open = $('cv-access-text').hidden;
+    $('cv-access-text').hidden = !open;
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  $('cv-maps').addEventListener('click', () => { $('cv-maps-note').hidden = false; });
+  document.querySelector('.taps').addEventListener('click', (e) => {
+    const b = e.target.closest('.tap');
+    if (!b || b.disabled) return;
+    const k = b.dataset.tap, now = cvClock();
+    const prev = k === 'complete' ? cv.taps.arrived : k === 'left' ? cv.taps.complete : null;
+    if (prev !== null && now < prev) {
+      const msg = $('cv-tap-msg');
+      msg.className = 'tap-msg';
+      msg.textContent = `The phone's clock (${clockLabel(now)}) is before the last tap. Move it forward.`;
+      return;
+    }
+    b.classList.add('saving'); b.textContent = 'Saving...';
+    cvSave(() => { cv.taps[k] = now; });
+  });
+  $('cv-checklist').addEventListener('change', (e) => {
+    const i = e.target.dataset.tick;
+    if (i === undefined) return;
+    if (e.target.checked) cv.ticks.add(+i); else cv.ticks.delete(+i);
+    renderCv();
+  });
+  document.querySelector('.late').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-late]');
+    if (!b || b.disabled) return;
+    const text = `Hi ${CV_CLIENT.first}, it's Sarah from Feather Lady Cleaning. I'm running about ${b.dataset.late} minutes late. Sorry for the wait!`;
+    const m = $('cv-late-msg');
+    if ($('cv-offline').checked) { m.textContent = 'Not sent - tap again when you have signal'; return; }
+    const seg = smsSegments(text);
+    m.innerHTML = `Text sent to ${esc(CV_CLIENT.first)} and logged on the job: <b>"${esc(text)}"</b> (${seg.segments} segment, my wording)`;
+  });
+  $('cv-upsell').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-offer]');
+    if (!b || b.disabled) return;
+    const item = upsellOffers(cvPricing(), 'Sun Prairie', cv.upsells.map((u) => u.itemLabel)).find((o) => o.itemLabel === b.dataset.offer);
+    if ($('cv-offline').checked) { const m = $('cv-tap-msg'); m.className = 'tap-msg'; m.textContent = 'Not saved - tap again when you have signal'; return; }
+    cv.upsells.push({ itemLabel: item.itemLabel, itemSource: item.itemSource, cents: item.cents, status: 'offered', moneyEntryId: null });
+    cv.sheet = cv.upsells.length - 1;
+    $('cv-sheet-title').textContent = `${item.itemLabel} for ${usd(item.cents).replace('.00', '')}?`;
+    $('cv-sheet').hidden = false;
+    renderCv();
+    $('cv-approve').focus();
+  });
+  const decide = (status) => {
+    const u = cv.upsells[cv.sheet];
+    u.status = status;
+    if (status === 'approved') syncUpsells();
+    cv.sheet = null;
+    $('cv-sheet').hidden = true;
+    renderCv();
+  };
+  $('cv-approve').addEventListener('click', () => decide('approved'));
+  $('cv-decline').addEventListener('click', () => decide('declined'));
+  $('cv-money').addEventListener('click', (e) => {
+    if (e.target.id !== 'cv-resync') return;
+    const before = cv.money.length;
+    syncUpsells();
+    renderCv();
+    $('cv-money').insertAdjacentHTML('beforeend', `<br>Sync ran again: ${before} row${before === 1 ? '' : 's'} before, ${cv.money.length} after.`);
+  });
+  renderCv();
+}
+
+// ------------------------------------------------------------ phone: Gift Cards (Screen 12)
+const gp = { sel: 0, busy: false };
+
+function renderGpOptions() {
+  const opts = giftOptions(gift.switches, gift.pricing);
+  gp.sel = Math.min(gp.sel, Math.max(0, opts.length - 1));
+  $('gp-options').innerHTML = opts.map((o, i) => `<button type="button" role="radio" aria-checked="${i === gp.sel}" data-gp="${i}">${esc(o.label.replace('Gift card - ', ''))}</button>`).join('');
+  $('gp-options').dataset.opts = JSON.stringify(opts);
+  renderGpPreview();
+}
+const gpOption = () => JSON.parse($('gp-options').dataset.opts || '[]')[gp.sel];
+const gpCustom = () => {
+  const v = $('gp-custom').value.trim();
+  if (!v) return null;
+  const n = Number(v.replace(/[$,]/g, ''));
+  return Number.isFinite(n) ? Math.round(n * 100) : NaN;
+};
+function renderGpPreview() {
+  const o = gpOption();
+  $('gp-custom-wrap').hidden = o?.kind !== 'custom';
+  let value = !o ? 'No gifts switched on' : o.kind === 'custom' ? (Number.isInteger(gpCustom()) ? money(gpCustom()) : 'Custom amount') : o.kind === 'amount' ? money(o.amountCents) : o.kind === 'standard' ? 'One Standard Clean' : 'One Deep Clean';
+  const msg = $('gp-msg').value.trim();
+  $('gp-preview').innerHTML = `<div class="gc-value">${esc(value)}</div>
+    <p class="gc-msg">${msg ? `"${esc(msg)}"` : ''}</p>
+    <div class="gc-sub">To ${esc($('gp-to').value || '...')} &middot; from ${esc($('gp-from').value || '...')}</div>
+    <div class="gc-code">FL-&bull;&bull;&bull;&bull;&bull;&bull;</div>`;
+}
+function renderGp() {
+  if (!$('gp-summary')) return;
+  const s = giftSummary(gift.cards);
+  $('gp-summary').innerHTML = [['Cards sold', s.cardsSold], ['Value sold', money(s.valueSoldCents)], ['Still to redeem', money(s.stillToRedeemCents)], ['Redeemed', money(s.redeemedCents)]]
+    .map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+  $('gp-list').innerHTML = [...gift.cards].reverse().map((c) => `<li><span class="code">${esc(c.code)}</span><span class="status status-${c.status}">${esc(statusText(c))}</span><span class="who">${esc(cardTitle(c))} - ${esc(c.buyerName)} to ${esc(c.recipientName)}</span></li>`).join('');
+}
+function setupGiftPhone() {
+  const tabs = ['sold', 'sell', 'redeem'];
+  const select = (name, focus) => {
+    for (const t of tabs) {
+      const b = $(`gp-tab-${t}`);
+      b.setAttribute('aria-selected', String(t === name));
+      b.tabIndex = t === name ? 0 : -1;
+      $(`gp-${t}`).hidden = t !== name;
+      if (t === name && focus) b.focus();
+    }
+  };
+  tabs.forEach((t, i) => {
+    $(`gp-tab-${t}`).addEventListener('click', () => select(t));
+    $(`gp-tab-${t}`).addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') select(tabs[(i + 1) % 3], true);
+      if (e.key === 'ArrowLeft') select(tabs[(i + 2) % 3], true);
+    });
+  });
+  $('gp-options').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-gp]');
+    if (!b) return;
+    gp.sel = +b.dataset.gp;
+    renderGpOptions();
+  });
+  for (const id of ['gp-custom', 'gp-from', 'gp-to', 'gp-msg']) $(id).addEventListener('input', renderGpPreview);
+  $('gp-create').addEventListener('click', () => {
+    if (gp.busy) return;
+    const sale = prepareSale({ option: gpOption(), customCents: gpCustom(), buyerName: $('gp-from').value, recipientName: $('gp-to').value, message: $('gp-msg').value });
+    const err = $('gp-error');
+    if (!sale.ok) { err.textContent = sale.errors.join(' '); return; }
+    err.textContent = '';
+    let code; do code = generateCode(); while (gift.cards.some((c) => c.code === code));
+    // Saved first as pending; the Stripe webhook makes it active once the money arrives.
+    const card = { ...sale.card, code, status: 'pending', soldAt: new Date().toISOString(), redeemedAt: null };
+    gift.cards.push(card);
+    gp.busy = true;
+    $('gp-create').textContent = 'Waiting for Stripe...';
+    renderGiftList();
+    setTimeout(() => {
+      card.status = 'active';
+      gp.busy = false;
+      $('gp-create').textContent = 'Take payment and create card';
+      renderGiftList();
+      select('sold');
+    }, 1200);
+  });
+  $('gp-redeem-btn').addEventListener('click', () => {
+    const r = redeem(gift.cards, $('gp-code').value, new Date().toISOString());
+    const out = $('gp-result');
+    if (r.ok) {
+      gift.cards = gift.cards.map((c) => (c.code === r.code ? r.card : c));
+      out.className = 'gp-result ok';
+      out.textContent = `Redeemed: ${cardTitle(r.card)}.`;
+      renderGiftList();
+    } else {
+      out.className = 'gp-result no';
+      out.textContent = r.message;
+    }
+  });
+  renderGpOptions();
+  renderGp();
+}
+
 // ------------------------------------------------------------ start
 drawTicks();
 drawStrip();
@@ -496,6 +780,8 @@ setupTexts();
 ['h-in', 'h-out', 'h-commute', 'h-rate'].forEach((id) => $(id).addEventListener('input', renderHours));
 renderHours();
 setupQuote();
+setupCleanerView();
+setupGiftPhone();
 setupFindings();
 loadResults();
 

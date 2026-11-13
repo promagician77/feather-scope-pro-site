@@ -61,6 +61,140 @@
     <p class="ran-note">Function tests ran on hidane, a third-party Firestore emulator. Your security rules are written but not run yet: Google's emulator could not be downloaded where I built this. Details at the bottom.</p>
   </section>
 
+  <section class="phones" aria-labelledby="phones-title">
+    <div class="section-head">
+      <h2 id="phones-title">On the phone: Cleaner View and Gift Cards</h2>
+      <p>Screens 3 and 12 sketched from your blueprint's own wording, running on the same tested logic as everything else on this page. They show how the app behaves; the real screens are built in FlutterFlow.</p>
+    </div>
+
+    <div class="phone-row">
+      <!-- Cleaner View -->
+      <figure class="device">
+        <div class="device-controls">
+          <label class="clock"><span>Time on the phone <strong id="cv-clock-label">8:55 AM</strong></span>
+            <input id="cv-clock" type="range" min="525" max="840" step="1" value="535">
+          </label>
+          <label class="switch small-switch"><input id="cv-offline" type="checkbox"> <span>No signal</span></label>
+        </div>
+        <div class="phone" role="region" aria-label="Cleaner View, Sarah's phone">
+          <div class="statusbar" aria-hidden="true"><span id="cv-status-time">8:55</span><span>&#9679;&#9679;&#9679; 5G</span></div>
+          <div class="appbar"><span class="appbar-title">Today</span><span class="appbar-sub">Sarah &middot; Tue Nov 17</span></div>
+          <div class="screen">
+            <div class="nudge" id="cv-nudge" hidden></div>
+            <div class="jobcard">
+              <div class="job-top"><b>9:00 AM &middot; Amy M.</b><span class="svc">Standard clean</span></div>
+              <p class="job-addr">Sun Prairie</p>
+              <div class="job-actions">
+                <button type="button" class="mini" id="cv-maps">Open in Maps</button>
+                <button type="button" class="mini" id="cv-access" aria-expanded="false">Access notes</button>
+              </div>
+              <p class="access" id="cv-access-text" hidden>Lockbox 4417 &middot; dog in back room &middot; park on street. Shown to the assigned cleaner only, never in Client View.</p>
+              <p class="maps-note" id="cv-maps-note" hidden>In the app this opens Maps at Amy's address.</p>
+            </div>
+
+            <div class="allergy" id="cv-allergy"></div>
+
+            <div class="taps">
+              <button type="button" class="tap" data-tap="arrived">Arrived</button>
+              <button type="button" class="tap" data-tap="complete">Clean complete</button>
+              <button type="button" class="tap" data-tap="left">Left</button>
+            </div>
+            <p class="tap-msg" id="cv-tap-msg" aria-live="polite"></p>
+
+            <div class="late">
+              <p class="mini-h">Running late</p>
+              <div class="late-row">
+                <button type="button" class="chip-sm" data-late="10">10 min</button>
+                <button type="button" class="chip-sm" data-late="15">15 min</button>
+                <button type="button" class="chip-sm" data-late="20">20 min</button>
+                <button type="button" class="chip-sm" data-late="30">30 min</button>
+              </div>
+              <p class="late-msg" id="cv-late-msg" aria-live="polite"></p>
+            </div>
+
+            <div class="hoursbox">
+              <div><span>Hours so far today</span><b id="cv-hours">0.0</b></div>
+              <div><span>Pay estimate</span><b id="cv-pay">$0.00</b></div>
+            </div>
+
+            <div class="checklist">
+              <p class="mini-h">Checklist <span id="cv-progress">0 of 6 done</span></p>
+              <p class="scopebox">We do not do: dishes, making beds, laundry, pet waste cleanup, or bodily fluids</p>
+              <ul id="cv-checklist"></ul>
+            </div>
+
+            <div class="upsell">
+              <p class="mini-h">Client asked for something extra?</p>
+              <ul id="cv-upsell"></ul>
+              <div class="jobtotal"><span>Job total</span><b id="cv-total">$165</b></div>
+              <p class="money-rows" id="cv-money"></p>
+            </div>
+          </div>
+
+          <div class="sheet" id="cv-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="cv-sheet-title">
+            <p class="sheet-who">Hand the phone to Amy</p>
+            <p class="sheet-title" id="cv-sheet-title"></p>
+            <p class="sheet-sub">One visit only. Your usual checklist stays the same.</p>
+            <div class="sheet-actions">
+              <button type="button" class="btn" id="cv-approve">Approve</button>
+              <button type="button" class="btn btn-quiet" id="cv-decline">Decline</button>
+            </div>
+          </div>
+        </div>
+        <figcaption>Screen 3, Cleaner View. Move the phone's clock, then tap. Arrived at 9:00 and Left at 1:30 gives your 4.0-hour test.</figcaption>
+      </figure>
+
+      <!-- Gift Cards -->
+      <figure class="device">
+        <div class="device-controls device-controls-plain"><span>Tay's phone, owner only</span></div>
+        <div class="phone" role="region" aria-label="Gift Cards, owner's phone">
+          <div class="statusbar" aria-hidden="true"><span>9:41</span><span>&#9679;&#9679;&#9679; 5G</span></div>
+          <div class="appbar"><span class="appbar-title">Gift Cards</span><span class="appbar-sub">Feather Lady Cleaning</span></div>
+          <div class="screen">
+            <dl class="gp-summary" id="gp-summary"></dl>
+            <div class="seg" role="tablist" aria-label="Gift card views">
+              <button type="button" role="tab" id="gp-tab-sold" aria-controls="gp-sold" aria-selected="true">Sold</button>
+              <button type="button" role="tab" id="gp-tab-sell" aria-controls="gp-sell" aria-selected="false" tabindex="-1">Sell</button>
+              <button type="button" role="tab" id="gp-tab-redeem" aria-controls="gp-redeem" aria-selected="false" tabindex="-1">Redeem</button>
+            </div>
+            <div role="tabpanel" id="gp-sold" aria-labelledby="gp-tab-sold">
+              <ul class="gp-list" id="gp-list"></ul>
+            </div>
+            <div role="tabpanel" id="gp-sell" aria-labelledby="gp-tab-sell" hidden>
+              <div class="gp-options" id="gp-options" role="radiogroup" aria-label="Gift"></div>
+              <label class="gp-field" id="gp-custom-wrap" hidden>Custom amount ($) <input id="gp-custom" inputmode="decimal" autocomplete="off"></label>
+              <label class="gp-field">From <input id="gp-from" value="Mai L." autocomplete="off"></label>
+              <label class="gp-field">To <input id="gp-to" value="Nia R." autocomplete="off"></label>
+              <label class="gp-field">Gift message <input id="gp-msg" value="Enjoy a morning off" autocomplete="off"></label>
+              <div class="giftcard giftcard-sm" id="gp-preview"></div>
+              <p class="form-error" id="gp-error" role="alert"></p>
+              <button type="button" class="btn btn-block" id="gp-create">Take payment and create card</button>
+            </div>
+            <div role="tabpanel" id="gp-redeem" aria-labelledby="gp-tab-redeem" hidden>
+              <label class="gp-field">Code <input id="gp-code" placeholder="FL-7K2Q9P" autocomplete="off" spellcheck="false"></label>
+              <button type="button" class="btn btn-block" id="gp-redeem-btn">Redeem</button>
+              <p class="gp-result" id="gp-result" aria-live="polite"></p>
+            </div>
+          </div>
+        </div>
+        <figcaption>Screen 12, Gift Cards. Shares its cards with the gift-card tool below, so a sale or redeem shows in both.</figcaption>
+      </figure>
+
+      <aside class="tryit" aria-labelledby="tryit-title">
+        <h3 id="tryit-title">Things to try, from your test plan</h3>
+        <ol>
+          <li>Slide the clock to 9:01 without tapping Arrived: the nudge appears. <span>p. 18, 40</span></li>
+          <li>Tick No signal, then tap: "Not saved - tap again when you have signal". <span>p. 18</span></li>
+          <li>After Arrived, offer Inside of oven and approve as Amy: the total goes from $165 to $210 and Money gets one row. Run the sync again: still one. <span>p. 42</span></li>
+          <li>Offer Dishes and decline: the total, Money and the checklist do not change. <span>p. 42</span></li>
+          <li>Arrived at 9:00, Left at 1:30: 4.0 paid hours. <span>p. 40</span></li>
+          <li>On Tay's phone, sell a card: it waits as pending until Stripe confirms, then turns active. <span>my fix, p. 37</span></li>
+          <li>Redeem "fl 7k2q9p" twice: it works once, then is refused with its date. <span>p. 41</span></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
   <section class="plan" aria-labelledby="plan-title">
     <div class="section-head">
       <h2 id="plan-title">Your test plan, run here</h2>
@@ -245,7 +379,7 @@
         <h3>Not measured</h3>
         <ul>
           <li>Your security rules: written with a test file for two businesses, not run. Google's Firestore emulator could not be downloaded in my build environment, and the emulator I used does not support rules yet.</li>
-          <li>No FlutterFlow screens were built for this page; it checks the logic the screens call.</li>
+          <li>No FlutterFlow screens were built for this page. The two phones are web sketches of Screens 3 and 12 that check behaviour and wording, not FlutterFlow widgets.</li>
           <li>No real texts, Stripe charges or Apple review. Twilio and Stripe were replaced by test doubles; Stripe webhook signatures were checked with Stripe's own library.</li>
           <li>The add-on and upsell prices on this page are placeholders, not yours.</li>
         </ul>

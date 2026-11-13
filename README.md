@@ -2,6 +2,8 @@
 
 A one-page check of the Feather Scope Pro FlutterFlow blueprint (45 pages, Feather Lady Cleaning LLC). It runs the rules that are easy to get wrong - the reminder and the 24-hour cancellation window, gift-card sell and redeem, text-message length, paid hours, quotes - using the blueprint's own numbers and test plan.
 
+It also shows two of the app's mobile screens in phone frames, sketched from the blueprint's wording and driven by the same tested logic: Screen 3, Cleaner View (Arrived / Clean complete / Left with time stamps, the +1-minute nudge, "Not saved" with no signal, running-late texts, hours and pay, allergy flags, checklist with the scope sentence, and the scope upsell with client approval), and Screen 12, Gift Cards (summary, sold list, sell with a pending-until-paid card, redeem). These are web sketches of the behaviour, not FlutterFlow screens.
+
 No build step. Plain HTML, CSS and ES modules; fonts are self-hosted (OFL).
 
 ## Run locally
@@ -35,12 +37,12 @@ Numbers come from `data/results.json` (generated 2026-11-13, Node 22.23.4):
 - A "tomorrow" taken from the server's UTC clock picks the wrong day on 127 of 365 evenings in 2026 and in 2027 - every evening on Central standard time.
 - The reminder text is 245 characters: 2 SMS segments in GSM-7; 4 segments if one apostrophe or dash is a curly / long one (UCS-2).
 - 1,000,000 gift codes drawn from the 31-character alphabet: 583 repeats against 563.4 expected (a fair draw lands within about ±47 of that). At 10,000 cards the chance of at least one repeat is 5.5%, which is why a code is saved with an atomic create.
-- Browser checks: 43 of 43 pass (Chromium, desktop 1360 px and phone 390 px), including axe with no serious or critical issues and no sideways scrolling on the phone.
+- Browser checks: 64 of 64 pass (Chromium, desktop 1360 px and phone 390 px), including the phone screens (Arrived 9:00 / Left 1:30 = 4.0 hours and $80.00 at $20/hr; one income row after an approval and after re-running the sync; a declined offer changes nothing; a sold card is pending, then active), axe with no serious or critical issues, and no sideways scrolling on the phone.
 
 ## Not measured
 
 - Firestore Security Rules: written (`rules/firestore.rules` in the kit) with a test file for two businesses, **not run**. Google's Firestore emulator could not be downloaded in the build environment, and hidane does not support rules yet.
-- No FlutterFlow screens were built; the page checks the logic the screens and functions call.
+- No FlutterFlow screens were built. The two phone screens are HTML sketches of Screens 3 and 12; they check behaviour and wording, not FlutterFlow widgets.
 - No real texts, card charges or app-store review. Twilio and Stripe were replaced by test doubles; webhook signatures were generated and checked with Stripe's own Node library, offline.
 - The add-on and upsell prices on the page are placeholders - the blueprint does not give them.
 - Page numbers refer to the PDF as supplied; if the blueprint is re-exported they may shift.
